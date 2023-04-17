@@ -2,7 +2,9 @@ package post05
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -213,4 +215,29 @@ func ListUsers() ([]Userdata, error) {
 		}
 	}(rows)
 	return Data, nil
+}
+
+// Update the user
+func updateUser(u Userdata) error {
+	db, err := openConnection()
+	if err != nil {
+		return err
+	}
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}(db)
+	userId := exists(u.Username)
+	if userId == -1 {
+		return errors.New("User does not exist")
+	}
+	u.ID = userId
+	query := `update "userdata" set "name"=$1, "surname"=$2, "description"=$3 where "userid"=$4`
+	_, err = db.Exec(query, u.Name, u.Surname, u.Description, u.ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
